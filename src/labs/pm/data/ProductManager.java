@@ -10,19 +10,24 @@ import java.util.*;
 
 public class ProductManager {
   private static final int REVIEW_EXTEND = 5;
-  private Map<Product, List<Review>> products = new HashMap<>();
-  private Review[] reviews = new Review[REVIEW_EXTEND];
+  private final Map<String, ResourceFormatter> formatters = Map.of(
+          "en-US", new ResourceFormatter(Locale.US),
+          "es-CO", new ResourceFormatter(new Locale("es", "CO"))
+  );
+  private final Map<Product, List<Review>> products = new HashMap<>();
+  private final Review[] reviews = new Review[REVIEW_EXTEND];
+  private ResourceFormatter formatter;
 
-  private Locale locale;
-  private ResourceBundle resources;
-  private DateTimeFormatter dateFormat;
-  private NumberFormat moneyFormat;
+  public ProductManager(String languageTag) {
+    changeLocale(languageTag);
+  }
 
   public ProductManager(Locale locale) {
-    this.locale = locale;
-    resources = ResourceBundle.getBundle("labs.pm.data.resources", locale);
-    dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
-    moneyFormat = NumberFormat.getCurrencyInstance(locale);
+    this(locale.toLanguageTag());
+  }
+
+  public void changeLocale(String languageTag) {
+    formatter = formatters.getOrDefault(languageTag, formatters.get("en-US"));
   }
 
   public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore) {
@@ -36,7 +41,6 @@ public class ProductManager {
     products.putIfAbsent(product, new ArrayList<>());
     return product;
   }
-
 
   public Product reviewProduct(int id, Rating rating, String comments) {
     return reviewProduct(findProduct(id), rating, comments);
@@ -69,13 +73,7 @@ public class ProductManager {
 
   public void printProductReport(Product product) {
     var report = new StringBuilder();
-    report.append(MessageFormat.format(
-            resources.getString("product"),
-            product.getName(),
-            moneyFormat.format(product.getPrice()),
-            product.getRating().getStars(),
-            dateFormat.format(product.getBestBefore())
-    ));
+    report.append(formatter.formatProduct(product));
     report.append(System.lineSeparator());
     List<Review> reviews = products.getOrDefault(product, new ArrayList<>());
     Collections.sort(reviews);
@@ -83,15 +81,46 @@ public class ProductManager {
       if (review == null) {
         break;
       }
-      report.append(MessageFormat.format(resources.getString("review"), review.getRating().getStars(), review.getComments()));
+      report.append(formatter.formatReview(review));
       report.append(System.lineSeparator());
     }
-//    Stream.of(reviews).forEach(r -> report.append(MessageFormat.format(resources.getString("review"), r.getRating().getStars(), r.getComments())));
     if (products.get(product).isEmpty()) {
-      report.append(resources.getString("no.reviews"));
+      report.append(formatter.getText("no.reviews"));
       report.append(System.lineSeparator());
     }
 
     System.out.println(report);
+  }
+
+  private static class ResourceFormatter {
+    private Locale locale;
+    private ResourceBundle resources;
+    private DateTimeFormatter dateFormat;
+    private NumberFormat moneyFormat;
+
+    public ResourceFormatter(Locale locale) {
+      this.locale = locale;
+      resources = ResourceBundle.getBundle("labs.pm.data.resources", locale);
+      dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
+      moneyFormat = NumberFormat.getCurrencyInstance(locale);
+    }
+
+    private String formatProduct(Product product) {
+      return MessageFormat.format(
+              getText("product"),
+              product.getName(),
+              moneyFormat.format(product.getPrice()),
+              product.getRating().getStars(),
+              dateFormat.format(product.getBestBefore())
+      );
+    }
+
+    private String formatReview(Review review) {
+      return MessageFormat.format(getText("review"), review.getRating().getStars(), review.getComments());
+    }
+
+    private String getText(String key) {
+      return resources.getString(key);
+    }
   }
 }
