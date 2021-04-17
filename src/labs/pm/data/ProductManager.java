@@ -67,6 +67,14 @@ public class ProductManager {
             .orElse(null);
   }
 
+  public void printProducts(Comparator<Product> sorter){
+    List<Product> productList = new ArrayList<>(products.keySet());
+    productList.sort(sorter);
+    productList.forEach(p -> {
+      System.out.println(formatter.formatProduct(p));
+    });
+  }
+
   public void printProductReport(int id) {
     Optional.ofNullable(findProduct(id)).ifPresentOrElse(this::printProductReport, () -> System.out.println("Inexistent product"));
   }
