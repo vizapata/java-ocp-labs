@@ -72,6 +72,16 @@ public class ProductManager {
             .orElse(null);
   }
 
+  public Map<String, String> getDiscounts() {
+    return products.keySet().stream().collect(
+            Collectors.groupingBy(
+                    p -> p.getRating().getStars(),
+                    Collectors.collectingAndThen(
+                            Collectors.summingDouble(p -> p.getDiscount().doubleValue()),
+                            d -> formatter.moneyFormat.format(d)
+                    )));
+  }
+
   public void printProducts(Predicate<Product> filter, Comparator<Product> sorter) {
     String txt = products.keySet()
             .stream()
