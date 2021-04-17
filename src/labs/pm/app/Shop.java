@@ -34,14 +34,14 @@ public class Shop {
     pm.changeLocale("fr-FR");
 
     pm.createProduct(103, "Cake", BigDecimal.valueOf(2.99), Rating.NOT_RATED, LocalDate.now());
-    pm.reviewProduct(103, Rating.FIVE_STAR, "Yummy");
-    pm.reviewProduct(103, Rating.FOUR_STAR, "Hate it");
-    pm.reviewProduct(103, Rating.FOUR_STAR, "So so");
-    pm.reviewProduct(103, Rating.FOUR_STAR, "Hate it");
+//    pm.reviewProduct(103, Rating.FIVE_STAR, "Yummy");
+//    pm.reviewProduct(103, Rating.FOUR_STAR, "Hate it");
+//    pm.reviewProduct(103, Rating.FOUR_STAR, "So so");
+//    pm.reviewProduct(103, Rating.FOUR_STAR, "Hate it");
     pm.printProductReport(103);
 
     Comparator<Product> ratingSorter = (p1, p2) -> p2.getRating().ordinal() - p1.getRating().ordinal();
     Comparator<Product> priceSorter = (p1, p2) -> p2.getPrice().compareTo(p1.getPrice());
-    pm.printProducts(ratingSorter.thenComparing(priceSorter).reversed());
+    pm.printProducts(p -> p.getPrice().floatValue() > 2, ratingSorter.thenComparing(priceSorter).reversed());
   }
 }

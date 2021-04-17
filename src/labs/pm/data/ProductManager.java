@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ProductManager {
   private static final int REVIEW_EXTEND = 5;
@@ -49,30 +51,35 @@ public class ProductManager {
   public Product reviewProduct(Product product, Rating rating, String comments) {
     List<Review> reviews = products.getOrDefault(product, new ArrayList<>());
     products.remove(product, reviews);
-
     reviews.add(new Review(rating, comments));
-    double avg = reviews.stream().mapToInt(r -> r.getRating().ordinal()).average().orElse(0);
+
+    double avg = reviews.stream()
+            .mapToInt(r -> r.getRating().ordinal())
+            .average()
+            .orElse(0);
 
     product = product.applyRating(Rateable.convert((int) avg));
-    products.put(product, reviews);
 
+    products.put(product, reviews);
     return product;
   }
 
   public Product findProduct(int id) {
     return products.keySet()
             .stream()
-            .filter(product -> product.getId() == id)
-            .findAny()
+            .filter(p -> p.getId() == id)
+            .findFirst()
             .orElse(null);
   }
 
-  public void printProducts(Comparator<Product> sorter){
-    List<Product> productList = new ArrayList<>(products.keySet());
-    productList.sort(sorter);
-    productList.forEach(p -> {
-      System.out.println(formatter.formatProduct(p));
-    });
+  public void printProducts(Predicate<Product> filter, Comparator<Product> sorter) {
+    String txt = products.keySet()
+            .stream()
+            .sorted(sorter)
+            .filter(filter)
+            .map(formatter::formatProduct)
+            .collect(Collectors.joining(System.lineSeparator()));
+    System.out.println(txt);
   }
 
   public void printProductReport(int id) {
@@ -85,18 +92,13 @@ public class ProductManager {
     report.append(System.lineSeparator());
     List<Review> reviews = products.getOrDefault(product, new ArrayList<>());
     Collections.sort(reviews);
-    for (Review review : reviews) {
-      if (review == null) {
-        break;
-      }
-      report.append(formatter.formatReview(review));
-      report.append(System.lineSeparator());
-    }
+    report.append(reviews.stream()
+            .map(formatter::formatReview)
+            .collect(Collectors.joining(System.lineSeparator())));
     if (products.get(product).isEmpty()) {
       report.append(formatter.getText("no.reviews"));
       report.append(System.lineSeparator());
     }
-
     System.out.println(report);
   }
 
