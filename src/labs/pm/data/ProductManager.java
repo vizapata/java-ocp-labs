@@ -8,10 +8,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ProductManager {
   private static final int REVIEW_EXTEND = 5;
+  private static final Logger log = Logger.getLogger(ProductManager.class.getName());
   private final Map<String, ResourceFormatter> formatters = Map.of(
           "en-US", new ResourceFormatter(Locale.US),
           "es-CO", new ResourceFormatter(new Locale("es", "CO"))
@@ -45,7 +47,12 @@ public class ProductManager {
   }
 
   public Product reviewProduct(int id, Rating rating, String comments) {
-    return reviewProduct(findProduct(id), rating, comments);
+    try {
+      return reviewProduct(findProduct(id), rating, comments);
+    } catch (ProjectManagerException ex) {
+      log.info(ex.getMessage());
+    }
+    return null;
   }
 
   public Product reviewProduct(Product product, Rating rating, String comments) {
@@ -64,12 +71,12 @@ public class ProductManager {
     return product;
   }
 
-  public Product findProduct(int id) {
+  public Product findProduct(int id) throws ProjectManagerException {
     return products.keySet()
             .stream()
             .filter(p -> p.getId() == id)
             .findFirst()
-            .orElse(null);
+            .orElseThrow(() -> new ProjectManagerException(String.format("Product with id %s not found", id)));
   }
 
   public Map<String, String> getDiscounts() {
@@ -93,7 +100,11 @@ public class ProductManager {
   }
 
   public void printProductReport(int id) {
-    Optional.ofNullable(findProduct(id)).ifPresentOrElse(this::printProductReport, () -> System.out.println("Inexistent product"));
+    try {
+      printProductReport(findProduct(id));
+    } catch (ProjectManagerException ex) {
+      log.info(ex.getMessage());
+    }
   }
 
   public void printProductReport(Product product) {
