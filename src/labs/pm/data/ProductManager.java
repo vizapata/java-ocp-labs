@@ -3,17 +3,23 @@ package labs.pm.data;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ProductManager {
   private static final int REVIEW_EXTEND = 5;
   private static final Logger log = Logger.getLogger(ProductManager.class.getName());
+  private final ResourceBundle config = ResourceBundle.getBundle("labs.pm.data.config");
+  private final MessageFormat productFormat = new MessageFormat(config.getString("product.data.format"));
+  private final MessageFormat reviewFormat = new MessageFormat(config.getString("review.data.format"));
   private final Map<String, ResourceFormatter> formatters = Map.of(
           "en-US", new ResourceFormatter(Locale.US),
           "es-CO", new ResourceFormatter(new Locale("es", "CO"))
@@ -121,6 +127,43 @@ public class ProductManager {
       report.append(System.lineSeparator());
     }
     System.out.println(report);
+  }
+
+  public void parseReview(String text) {
+    try {
+      Object[] values = reviewFormat.parse(text);
+      reviewProduct(
+              Integer.parseInt((String) values[0]),
+              Rateable.convert(Integer.parseInt((String) values[1])),
+              (String) values[2]
+      );
+    } catch (ParseException | NumberFormatException ex) {
+      log.log(Level.WARNING, "Error parsing review: " + text);
+    }
+  }
+
+  public void parseProduct(String text) {
+    try {
+      Object[] values = productFormat.parse(text);
+      String type = (String) values[0];
+      int id = Integer.parseInt((String) values[1]);
+      String name = (String) values[2];
+      BigDecimal price = BigDecimal.valueOf(Double.parseDouble((String) values[4]));
+      Rating rating = Rateable.convert(Integer.parseInt((String) values[4]));
+      switch (type) {
+        case "D":
+          createProduct(id, name, price, rating);
+          break;
+        case "F":
+          LocalDate bestBefore = LocalDate.parse((String) values[5]);
+          createProduct(id, name, price, rating, bestBefore);
+          break;
+        default:
+          throw new ParseException("Invalid product type", 0);
+      }
+    } catch (ParseException | NumberFormatException | DateTimeParseException ex) {
+      log.log(Level.WARNING, "Error parsing product: " + text);
+    }
   }
 
   private static class ResourceFormatter {

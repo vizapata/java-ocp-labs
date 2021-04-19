@@ -13,13 +13,16 @@ public class Shop {
   public static void main(String[] args) {
     ProductManager pm = new ProductManager("en-US");
 
-    pm.createProduct(101, "Tea", BigDecimal.valueOf(11.99), Rating.NOT_RATED);
-    pm.reviewProduct(101, Rating.FOUR_STAR, "I don't like the tea pretty much");
-    pm.reviewProduct(101, Rating.ONE_STAR, "Hate it");
-    pm.reviewProduct(101, Rating.THREE_STAR, "So so");
-    pm.reviewProduct(101, Rating.ONE_STAR, "Hate it");
-    pm.reviewProduct(101, Rating.ONE_STAR, "Hate it");
-    pm.reviewProduct(101, Rating.FIVE_STAR, "Love it");
+    pm.parseProduct("F,101,Parsed Tea,11.99,0,2021-03-21");
+    pm.parseReview("101,4,I don't like the tea pretty much");
+    pm.parseReview("101,1,Hate it");
+    pm.parseReview("101,3,So so");
+    pm.parseReview("101,1,Hate it");
+    pm.parseReview("101,1,Hate it");
+    pm.parseReview("101,5,Love it");
+    pm.parseReview("101,2,Some parsed rating");
+    pm.parseReview("1010,2,Some parsed rating");  // Product not found
+    pm.parseReview("1010,Two,Some parsed rating"); // Number format exception
     pm.printProductReport(101);
 
     pm.changeLocale("es-CO");
